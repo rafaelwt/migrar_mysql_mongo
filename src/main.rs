@@ -1,43 +1,28 @@
-use base64::{Engine as _, engine::{ general_purpose}};
+use base64::{engine::general_purpose, Engine as _};
 
 use dialoguer::{Confirm, Select};
 use mongodb::bson;
 use mongodb::bson::Binary;
-use mysql::prelude::*;
 use mysql::params;
-// use std::sync::atomic::{AtomicBool, Ordering};
-// use std::sync::Arc;
+use mysql::prelude::*;
 
-use std::io::{prelude::*};
+
+use std::io::prelude::*;
 mod configuration;
+use indicatif::ProgressBar;
 use mongodb::{bson::doc, options::ClientOptions, Client, Database};
-use indicatif::{ProgressBar};
+
 use std::thread;
 use std::time::Duration;
-use std::fs::OpenOptions;
 use tokio;
 mod models;
+mod utils;
+use crate::utils::write_file::{save_to_file, write_separation};
 // use ctrlc;
 #[tokio::main]
 async fn main() {
-    // Validar configuración
-    // let settings = match validacion::validar_configuracion() {
-    //     Ok(settings) => settings,
-    //     Err(err) => {
-    //         println!("Error al cargar el archivo de configuración: {}", err);
-    //         return;
-    //     }
-    // };
 
-    // Evitar interrupir con control + c
-    // let running = Arc::new(AtomicBool::new(true));
-    // let r = running.clone();
-
-    // ctrlc::set_handler(move || {
-    //     r.store(false, Ordering::SeqCst);
-    // }).expect("Error setting Ctrl-C handler");
-    // ========================================
-    // Iniciar migración
+    
     match configuration::validar_configuracion() {
         Ok(()) => {
             mostrar_menu().await;
@@ -92,40 +77,7 @@ async fn mostrar_menu() {
         }
     }
 }
-// fn migrar() {
-//     let mysql_url = configuration::obtener_variable("mysql_url").unwrap();
-//     println!("El valor de mysql_url es: {}", mysql_url);
-//     let mongodb_url = configuration::obtener_variable("mongodb_url").unwrap();
-//     println!("El valor de mongodb_url es: {}", mongodb_url);
-//     println!("Iniciando migración...");
-//     // Lógica de migración aquí
-//     println!("Migración completada.");
-// }
-// fn guardar_ids_migrados(ids: &[i32]) -> io::Result<()> {
-//     let mut file = File::create("ids_migrados.txt")?;
-//     for id in ids {
-//         writeln!(file, "{}", id)?;
-//     }
-//     Ok(())
-// }
-async fn save_to_file(id: i32) -> std::io::Result<()> {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .append(true)
-        .open("migrated_ids.txt")?;
-    writeln!(file, "{}", id)?;
-    Ok(())
-}
-async fn write_separation() -> std::io::Result<()> {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .append(true)
-        .open("migrated_ids.txt")?;
-    writeln!(file, "------------------------")?;
-    Ok(())
-}
+
 
 async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
     let mysql_url = configuration::obtener_variable("mysql_url").unwrap();
@@ -141,7 +93,12 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
     // Crear el cliente de MongoDB
     let client = Client::with_options(client_options)?;
 
-    let count: i64 = conn.exec_first("SELECT COUNT(*) from tbl_docDigitalizados WHERE eMigrado_fl = 'N'", ())?.unwrap();
+    let count: i64 = conn
+        .exec_first(
+            "SELECT COUNT(*) from tbl_docDigitalizados WHERE eMigrado_fl = 'N'",
+            (),
+        )?
+        .unwrap();
     let bar = ProgressBar::new(count as u64);
 
     let query_result = conn.query_map(
@@ -175,9 +132,10 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
     let collection_byte = db.collection("tbl_docDigitalizados_byte");
 
     for doc in query_result {
-
         // let decoded_bytes = base64::decode("YmFzZTY0IGRlY29kZQ==").unwrap(); // deprecated
-        let decoded_bytes = general_purpose::STANDARD.decode(&doc.sz_base64_obj).unwrap();
+        let decoded_bytes = general_purpose::STANDARD
+            .decode(&doc.sz_base64_obj)
+            .unwrap();
         let document = doc! {
             "lDocDigitalizado_id": &doc.l_doc_digitalizado_id,
             "iServicio_id": &doc.i_servicio_id,
@@ -189,7 +147,7 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
             "eEstado_fl": &doc.e_estado_fl,
             "eMigrado_fl": &doc.e_migrado_fl,
         };
-        
+
         let document_byte = doc! {
             "lDocDigitalizado_id": &doc.l_doc_digitalizado_id,
             "iServicio_id": &doc.i_servicio_id,
@@ -213,8 +171,10 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
         bar.inc(1);
         thread::sleep(Duration::from_millis(5));
     }
-    write_separation().await.unwrap();
+    if count > 0 {
+        write_separation().await.unwrap();
+    }
+
     bar.finish();
     Ok(())
 }
-
