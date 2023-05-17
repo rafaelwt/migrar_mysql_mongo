@@ -2,10 +2,13 @@ use dialoguer::{Confirm, Select};
 use mysql::prelude::*;
 use mysql::params;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::{self, prelude::*};
+use std::io::{prelude::*};
 mod configuration;
 use mongodb::{bson::doc, options::ClientOptions, Client, Database};
+use indicatif::{ProgressBar};
+use std::thread;
+use std::time::Duration;
+use std::fs::OpenOptions;
 use tokio;
 #[tokio::main]
 async fn main() {
@@ -87,6 +90,24 @@ async fn mostrar_menu() {
 //     }
 //     Ok(())
 // }
+async fn save_to_file(id: i32) -> std::io::Result<()> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open("migrated_ids.txt")?;
+    writeln!(file, "{}", id)?;
+    Ok(())
+}
+async fn write_separation() -> std::io::Result<()> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open("migrated_ids.txt")?;
+    writeln!(file, "------------------------")?;
+    Ok(())
+}
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct Documento {
     l_doc_digitalizado_id: i32,
@@ -113,6 +134,9 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
 
     // Crear el cliente de MongoDB
     let client = Client::with_options(client_options)?;
+
+    let count: i64 = conn.exec_first("SELECT COUNT(*) from tbl_docDigitalizados WHERE eMigrado_fl = 'N'", ())?.unwrap();
+    let bar = ProgressBar::new(count as u64);
 
     let query_result = conn.query_map(
         "SELECT lDocDigitalizado_id, iServicio_id, lCobranza_id, sDocServicio_id, eDocDigitalizado_fl, sDocDigitalizado_nm, szBase64_obj, eEstado_fl, eMigrado_fl FROM tbl_docDigitalizados WHERE eMigrado_fl = 'N'",
@@ -162,7 +186,11 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
                 "id" => doc.l_doc_digitalizado_id
             },
         )?;
+        save_to_file(doc.l_doc_digitalizado_id).await.unwrap();
+        bar.inc(1);
+        thread::sleep(Duration::from_millis(10));
     }
-
+    write_separation().await.unwrap();
+    bar.finish();
     Ok(())
 }
