@@ -1,0 +1,4 @@
+-- generar produccion 
+cargo build --release
+# -- correr apliacion 
+cargo run

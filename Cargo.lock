@@ -1241,6 +1241,8 @@ dependencies = [
  "indicatif",
  "mongodb",
  "mysql",
+ "serde",
+ "tokio",
 ]
 
 [[package]]
