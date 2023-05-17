@@ -1,7 +1,7 @@
 use dialoguer::{Confirm, Select};
 use mysql::prelude::*;
 use mysql::params;
-use serde::{Deserialize, Serialize};
+
 use std::io::{prelude::*};
 mod configuration;
 use mongodb::{bson::doc, options::ClientOptions, Client, Database};
@@ -10,6 +10,7 @@ use std::thread;
 use std::time::Duration;
 use std::fs::OpenOptions;
 use tokio;
+mod models;
 #[tokio::main]
 async fn main() {
     // Validar configuración
@@ -108,18 +109,6 @@ async fn write_separation() -> std::io::Result<()> {
     writeln!(file, "------------------------")?;
     Ok(())
 }
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct Documento {
-    l_doc_digitalizado_id: i32,
-    i_servicio_id: i32,
-    l_cobranza_id: i64,
-    s_doc_servicio_id: String,
-    e_doc_digitalizado_fl: String,
-    s_doc_digitalizado_nm: String,
-    sz_base64_obj: String,
-    e_estado_fl: String,
-    e_migrado_fl: String,
-}
 
 async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
     let mysql_url = configuration::obtener_variable("mysql_url").unwrap();
@@ -151,7 +140,7 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
             e_estado_fl,
             e_migrado_fl,
         )| {
-            Documento {
+            models::documento::Documento {
                 l_doc_digitalizado_id: l_doc_digitalizado_id,
                 i_servicio_id: i_servicio_id,
                 l_cobranza_id: l_cobranza_id,
