@@ -1,15 +1,11 @@
 use dialoguer::{Confirm, Select};
 use mysql::prelude::*;
+use mysql::params;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{self, prelude::*};
 mod configuration;
-use mongodb::{
-    options::{ClientOptions},
-    Client,
-    Database,
-    bson::{doc},
-};
+use mongodb::{bson::doc, options::ClientOptions, Client, Database};
 use tokio;
 #[tokio::main]
 async fn main() {
@@ -160,8 +156,13 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
             "eMigrado_fl": doc.e_migrado_fl,
         };
         collection.insert_one(document, None).await?;
+        conn.exec_drop(
+            r"UPDATE tbl_docDigitalizados SET eMigrado_fl = 'S' WHERE lDocDigitalizado_id = :id",
+            params! {
+                "id" => doc.l_doc_digitalizado_id
+            },
+        )?;
     }
-
 
     Ok(())
 }
