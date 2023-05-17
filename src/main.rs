@@ -1,6 +1,8 @@
 use dialoguer::{Confirm, Select};
 use mysql::prelude::*;
 use mysql::params;
+// use std::sync::atomic::{AtomicBool, Ordering};
+// use std::sync::Arc;
 
 use std::io::{prelude::*};
 mod configuration;
@@ -11,6 +13,7 @@ use std::time::Duration;
 use std::fs::OpenOptions;
 use tokio;
 mod models;
+// use ctrlc;
 #[tokio::main]
 async fn main() {
     // Validar configuración
@@ -21,6 +24,16 @@ async fn main() {
     //         return;
     //     }
     // };
+
+    // Evitar interrupir con control + c
+    // let running = Arc::new(AtomicBool::new(true));
+    // let r = running.clone();
+
+    // ctrlc::set_handler(move || {
+    //     r.store(false, Ordering::SeqCst);
+    // }).expect("Error setting Ctrl-C handler");
+    // ========================================
+    // Iniciar migración
     match configuration::validar_configuracion() {
         Ok(()) => {
             mostrar_menu().await;
