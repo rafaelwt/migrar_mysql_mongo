@@ -188,7 +188,7 @@ async fn migrar() -> Result<(), Box<dyn std::error::Error>> {
         )?;
         save_to_file(doc.l_doc_digitalizado_id).await.unwrap();
         bar.inc(1);
-        thread::sleep(Duration::from_millis(10));
+        thread::sleep(Duration::from_millis(5));
     }
     write_separation().await.unwrap();
     bar.finish();
