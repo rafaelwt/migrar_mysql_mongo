@@ -33,6 +33,15 @@ pub fn validar_configuracion() -> Result<(), io::Error> {
         }
         _ => (),
     }
+    match env::var("lote") {
+        Err(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "La variable lote  no está definida en .env (debe ser un numero entero))",
+            ))
+        }
+        _ => (),
+    }
 
     Ok(())
 }
