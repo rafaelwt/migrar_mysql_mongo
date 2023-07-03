@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 pub struct Documento {
     pub l_doc_digitalizado_id: i32,
     pub i_servicio_id: i32,
-    pub l_cobranza_id: i64,
+    pub l_cobranza_id: i32,
     pub s_doc_servicio_id: String,
     pub e_doc_digitalizado_fl: String,
     pub s_doc_digitalizado_nm: String,

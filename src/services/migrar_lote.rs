@@ -1,7 +1,7 @@
-use base64::{engine::general_purpose, Engine as _};
+// use base64::{engine::general_purpose, Engine as _};
 use indicatif::ProgressBar;
-use mongodb::bson;
-use mongodb::bson::Binary;
+// use mongodb::bson;
+// use mongodb::bson::Binary;
 use mongodb::{bson::doc, options::ClientOptions, Client, Database};
 use mysql::prelude::*;
 use std::thread;
@@ -65,15 +65,15 @@ pub async fn migrar_lote() -> Result<(), Box<dyn std::error::Error>> {
                 }
             },
         )?;
-        let db: Database = client.database("pagoalpaso");
+        let db: Database = client.database("pagoalpaso_prod");
         let collection = db.collection("tbl_docDigitalizados");
-        let collection_byte = db.collection("tbl_docDigitalizados_byte");
+        // let collection_byte = db.collection("tbl_docDigitalizados_byte");
 
         for doc in query_result {
             // let decoded_bytes = base64::decode("YmFzZTY0IGRlY29kZQ==").unwrap(); // deprecated
-            let decoded_bytes = general_purpose::STANDARD
-                .decode(&doc.sz_base64_obj)
-                .unwrap();
+            // let decoded_bytes = general_purpose::STANDARD
+            //     .decode(&doc.sz_base64_obj)
+            //     .unwrap();
             let document = doc! {
                 "lDocDigitalizado_id": &doc.l_doc_digitalizado_id,
                 "iServicio_id": &doc.i_servicio_id,
@@ -86,19 +86,19 @@ pub async fn migrar_lote() -> Result<(), Box<dyn std::error::Error>> {
                 "eMigrado_fl": &doc.e_migrado_fl,
             };
 
-            let document_byte = doc! {
-                "lDocDigitalizado_id": &doc.l_doc_digitalizado_id,
-                "iServicio_id": &doc.i_servicio_id,
-                "lCobranza_id": &doc.l_cobranza_id,
-                "sDocServicio_id": &doc.s_doc_servicio_id,
-                "eDocDigitalizado_fl": &doc.e_doc_digitalizado_fl,
-                "sDocDigitalizado_nm": &doc.s_doc_digitalizado_nm,
-                "szBase64_obj": Binary { subtype: bson::spec::BinarySubtype::Generic, bytes: decoded_bytes },
-                "eEstado_fl": &doc.e_estado_fl,
-                "eMigrado_fl": &doc.e_migrado_fl,
-            };
+            // let document_byte = doc! {
+            //     "lDocDigitalizado_id": &doc.l_doc_digitalizado_id,
+            //     "iServicio_id": &doc.i_servicio_id,
+            //     "lCobranza_id": &doc.l_cobranza_id,
+            //     "sDocServicio_id": &doc.s_doc_servicio_id,
+            //     "eDocDigitalizado_fl": &doc.e_doc_digitalizado_fl,
+            //     "sDocDigitalizado_nm": &doc.s_doc_digitalizado_nm,
+            //     "szBase64_obj": Binary { subtype: bson::spec::BinarySubtype::Generic, bytes: decoded_bytes },
+            //     "eEstado_fl": &doc.e_estado_fl,
+            //     "eMigrado_fl": &doc.e_migrado_fl,
+            // };
             collection.insert_one(document, None).await?;
-            collection_byte.insert_one(document_byte, None).await?;
+            // collection_byte.insert_one(document_byte, None).await?;
             // conn.exec_drop(
             //     r"UPDATE tbl_docDigitalizados SET eMigrado_fl = 'S' WHERE lDocDigitalizado_id = :id",
             //     params! {
