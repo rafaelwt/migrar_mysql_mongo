@@ -11,3 +11,9 @@ pub struct Documento {
     pub e_estado_fl: String,
     pub e_migrado_fl: String,
 }
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Cobranza {
+    pub l_doc_digitalizado_id: i32,
+    pub dt_cobranza_dt: String,
+}

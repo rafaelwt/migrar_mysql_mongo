@@ -6,6 +6,7 @@ mod models;
 mod utils;
 mod services;
 use crate::services::migrar::{migrar};
+use crate::services::migrar_size_date::{migrar_size_date};
 use crate::services::migrar_lote::{migrar_lote};
 use crate::services::migrar_test::{migrar_test};
 // use ctrlc;
@@ -28,7 +29,7 @@ async fn main() {
 
 async fn mostrar_menu() {
     loop {
-        let menu_options = vec!["Migrar","Migrar por lote", "Prueba", "Salir"];
+        let menu_options = vec!["Migrar","Migrar por lote","Migrar Fecha y Tamaño" ,"Prueba", "Salir"];
         println!("==============  Sistema de migración de datos ===================");
         let selection = Select::new()
             .with_prompt("Menú")
@@ -77,6 +78,25 @@ async fn mostrar_menu() {
                 }
             },
             2 => {
+                let mensaje = format!("¿Estás seguro de iniciar la migración? de la fecha y tamaño de los documentos"); 
+                let confirm = Confirm::new()
+                    .with_prompt(mensaje)
+                    .interact()
+                    .unwrap();
+
+                if confirm {
+                    if let Err(err) = migrar_size_date().await {
+                        eprintln!("Error al migrar los datos: {}", err);
+                    } else {
+                        println!("Migración de fechas completada exitosamente.");
+                    }
+                    println!("Presiona cualquier tecla para salir...");
+                    let _ = std::io::stdout().flush();
+                    let _ = std::io::stdin().read(&mut [0u8]).unwrap();
+                    break;
+                }
+            },
+            3 => {
                 let limite_test = configuration::obtener_variable("limite_test").unwrap();
                 let mensaje = format!("¿Estás seguro de iniciar la prueba de migración? Solo los primeros: {} registros", limite_test); 
                 let confirm = Confirm::new()
@@ -96,7 +116,7 @@ async fn mostrar_menu() {
                     break;
                 }
             }
-            3 => {
+            4 => {
                 println!("Operación cancelada...");
                 break;
             }
