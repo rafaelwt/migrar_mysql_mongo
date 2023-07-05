@@ -28,12 +28,14 @@ pub async fn migrar_size_date() -> Result<(), Box<dyn std::error::Error>> {
     let mongo_collection = database.collection::<Document>("tbl_docDigitalizados");
 
     // barra de progreso
-    let filter = doc! {};
-    let count = mongo_collection.count_documents(filter, None).await?;
+     let filter = doc! {"lCobranza_id": {"$ne": 0}};
+    
+    let count = mongo_collection.count_documents(filter.clone(), None).await?;
+    print!("Total de documentos: {}\n", count);
     let bar = ProgressBar::new(count as u64);
 
     // Obtener documentos de mongo
-    let mut cursor = mongo_collection.find(None, None).await?;
+    let mut cursor = mongo_collection.find(Some(filter), None).await?;
 
     while let Some(result) = cursor.next().await {
         let document = match result {
